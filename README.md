@@ -3,7 +3,7 @@
 A practical marketplace of GitHub Copilot plugins for everyday workflows: English coaching, Python guidance, security auditing, brag tracking, and default Copilot baseline settings.
 
 [![Marketplace](https://img.shields.io/badge/marketplace-francho--skills-1f6feb)](.claude-plugin/marketplace.json)
-[![Plugins](https://img.shields.io/badge/plugins-5-success)](plugins)
+[![Plugins](https://img.shields.io/badge/plugins-6-success)](plugins)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 
@@ -16,6 +16,7 @@ A practical marketplace of GitHub Copilot plugins for everyday workflows: Englis
 | [francho-security](plugins/francho-security) | Skill + Agent | Security audits with a dedicated read-only analyst agent and structured remediation output. |
 | [francho-brag](plugins/francho-brag) | Skill | Adds achievements through `bragdoc` with required-field validation, memory of your brag file absolute path, optional template-based file creation, and optional commit/push after confirmation. |
 | [francho-copilot-base](plugins/francho-copilot-base) | Skill | Mandatory baseline behavior layer intended to run first, setting tone, language, context priority, and a stricter anti-hallucination policy. |
+| [francho-decision-records](plugins/francho-decision-records) | Skill | Proposes and maintains approved ADRs and DDRs with deterministic indexing, validation, and merge repair. |
 
 ## Why this repo
 
@@ -65,6 +66,7 @@ copilot plugin install francho-python@francho-skills
 copilot plugin install francho-security@francho-skills
 copilot plugin install francho-brag@francho-skills
 copilot plugin install francho-copilot-base@francho-skills
+copilot plugin install francho-decision-records@francho-skills
 copilot plugin list
 ```
 
@@ -76,6 +78,7 @@ copilot plugin install FranchoLab/skills:plugins/francho-python
 copilot plugin install FranchoLab/skills:plugins/francho-security
 copilot plugin install FranchoLab/skills:plugins/francho-brag
 copilot plugin install FranchoLab/skills:plugins/francho-copilot-base
+copilot plugin install FranchoLab/skills:plugins/francho-decision-records
 copilot plugin list
 ```
 
@@ -86,6 +89,7 @@ copilot plugin list
 - "Run a security audit for recent repository changes."
 - "Add this achievement to my brag document."
 - "Use a concise and practical default tone in all Copilot responses."
+- "Propose an ADR for the architecture trade-off and update the decision index."
 
 ## Repository Layout
 
@@ -96,6 +100,7 @@ copilot plugin list
 └── plugins/
     ├── francho-brag/
     ├── francho-copilot-base/
+    ├── francho-decision-records/
     ├── francho-english-teacher/
     ├── francho-python/
     └── francho-security/

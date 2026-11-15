@@ -28,6 +28,11 @@
       "name": "francho-copilot-base",
       "source": "./plugins/francho-copilot-base",
       "description": "Default Copilot behavior and tone configuration"
+    },
+    {
+      "name": "francho-decision-records",
+      "source": "./plugins/francho-decision-records",
+      "description": "Propose and maintain approved ADR and DDR decision records."
     }
   ]
 }

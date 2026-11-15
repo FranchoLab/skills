@@ -1,0 +1,6 @@
+{
+  "name": "francho-decision-records",
+  "version": "0.1.0",
+  "description": "Propose and maintain approved ADR and DDR decision records.",
+  "skills": ["./skills/"]
+}
