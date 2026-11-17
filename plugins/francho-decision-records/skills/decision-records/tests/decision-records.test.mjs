@@ -59,7 +59,7 @@ test('draft persistence is unnumbered, canonical, unique and outside official in
   const second = p.run('propose', source);
   assert.equal(first.applied, true);
   assert.notEqual(first.draft, second.draft);
-  assert.match(first.draft, /^docs\/decisions\/drafts\/.*\.md$/);
+  assert.match(first.draft, /^docs\/decisions\/drafts\/preserve-approved-decisions-[a-f0-9]{8}\.md$/);
   assert.equal(p.read(first.draft), p.read(source));
   assert.equal(existsSync(join(p.root, 'docs/decisions/state.json')), false);
   assert.equal(p.run('validate').records, 0);
@@ -87,7 +87,7 @@ test('accept preserves prose, generates receipts and both indexes; duplicate acc
   const preview = p.run('accept', file);
   const result = p.accept(file);
   assert.equal(result.id, 'ADR-0001');
-  const record = p.read('docs/decisions/adr/ADR-0001.md');
+  const record = p.read('docs/decisions/adr/ADR-0001-choose-a-b-contract.md');
   assert.match(record, /# ADR-0001: Choose A \| B <contract>/);
   assert.ok(record.endsWith(p.read(file).split('---\n\n')[1]));
   assert.ok(record.includes(`content-sha256: "${preview.sha256}"`));
@@ -122,8 +122,8 @@ test('multiple same-type predecessors are superseded in one coherent operation',
   });
   const result = p.accept(file, 'supersede');
   assert.equal(result.id, 'ADR-0003');
-  for (const id of ['ADR-0001', 'ADR-0002']) {
-    const record = p.read(`docs/decisions/adr/${id}.md`);
+  for (const name of ['ADR-0001-preserve-approved-decisions', 'ADR-0002-second-decision']) {
+    const record = p.read(`docs/decisions/adr/${name}.md`);
     assert.match(record, /status: "superseded"/);
     assert.match(record, /superseded-by: \["ADR-0003"\]/);
   }
@@ -147,7 +147,7 @@ test('unknown, duplicate, self and cross-type references block acceptance', (t) 
 test('retirement binds exact current record and reason, leaves immutable prose and path intact', (t) => {
   const p = project(t);
   p.accept(p.draft());
-  const path = 'docs/decisions/adr/ADR-0001.md';
+  const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   const before = p.read(path);
   const reason = 'The approved subsystem has been removed.';
   const preview = p.run('retire', 'ADR-0001', '--reason', reason);
@@ -194,7 +194,7 @@ test('repair previews missing inverse links and status, then applies with an aud
   const p = project(t);
   p.accept(p.draft());
   p.accept(p.draft('ADR', { title: 'Successor', supersedes: ['ADR-0001'] }));
-  const path = 'docs/decisions/adr/ADR-0001.md';
+  const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   p.write(path, p.read(path).replace('status: "superseded"', 'status: "accepted"')
     .replace('superseded-by: ["ADR-0002"]', 'superseded-by: []'));
   const broken = p.read(path);
@@ -215,7 +215,7 @@ test('repair fills missing links on a predecessor already superseded by another 
   p.accept(p.draft());
   p.accept(p.draft('ADR', { title: 'First successor', supersedes: ['ADR-0001'] }));
   p.accept(p.draft('ADR', { title: 'Second successor', supersedes: ['ADR-0001'] }));
-  const path = 'docs/decisions/adr/ADR-0001.md';
+  const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   p.write(path, p.read(path).replace('superseded-by: ["ADR-0002","ADR-0003"]', 'superseded-by: ["ADR-0002"]'));
   assert.deepEqual(p.run('repair').repaired, ['ADR-0001']);
   p.run('repair', '--apply');
@@ -225,14 +225,14 @@ test('repair fills missing links on a predecessor already superseded by another 
 test('stale indexes can be rebuilt without changing official content or receipts', (t) => {
   const p = project(t);
   p.accept(p.draft());
-  const before = p.read('docs/decisions/adr/ADR-0001.md');
+  const before = p.read('docs/decisions/adr/ADR-0001-preserve-approved-decisions.md');
   const state = p.read('docs/decisions/state.json');
   p.write('docs/decisions/adr/index.md', 'stale');
   assert.throws(() => p.run('validate'), /Stale or missing index/);
   assert.deepEqual(p.run('index').changed, ['docs/decisions/adr/index.md']);
   assert.equal(p.read('docs/decisions/adr/index.md'), 'stale');
   p.run('index', '--apply');
-  assert.equal(p.read('docs/decisions/adr/ADR-0001.md'), before);
+  assert.equal(p.read('docs/decisions/adr/ADR-0001-preserve-approved-decisions.md'), before);
   assert.equal(p.read('docs/decisions/state.json'), state);
   assert.equal(p.run('validate').valid, true);
 });
@@ -246,7 +246,7 @@ test('immutable content, outgoing relationships and receipts cannot be repaired 
   ]) {
     const p = project(t);
     p.accept(p.draft());
-    const path = 'docs/decisions/adr/ADR-0001.md';
+    const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
     const edited = change(p.read(path));
     p.write(path, edited);
     assert.throws(() => p.run('repair', '--apply'), /immutable content|receipt differs/);
@@ -257,7 +257,7 @@ test('immutable content, outgoing relationships and receipts cannot be repaired 
 test('duplicates, absent state, missing records and lowered counters fail explicitly', (t) => {
   const p = project(t);
   p.accept(p.draft());
-  const record = p.read('docs/decisions/adr/ADR-0001.md');
+  const record = p.read('docs/decisions/adr/ADR-0001-preserve-approved-decisions.md');
   p.write('docs/decisions/adr/copy.md', record);
   assert.throws(() => p.run('repair'), /Duplicate ID/);
   rmSync(join(p.root, 'docs/decisions/adr/copy.md'));
@@ -271,7 +271,7 @@ test('duplicates, absent state, missing records and lowered counters fail explic
   p.write(statePath, JSON.stringify(state));
   assert.throws(() => p.run('validate'), /high-water/);
   p.write(statePath, stateSource);
-  rmSync(join(p.root, 'docs/decisions/adr/ADR-0001.md'));
+  rmSync(join(p.root, 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md'));
   assert.throws(() => p.run('repair'), /State\/record mismatch/);
 });
 
@@ -279,7 +279,7 @@ test('unexpected inverse links and unsupported status changes block the whole re
   const p = project(t);
   p.accept(p.draft());
   p.accept(p.draft('ADR', { title: 'Unrelated decision' }));
-  const path = 'docs/decisions/adr/ADR-0001.md';
+  const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   const original = p.read(path);
   p.write(path, original.replace('superseded-by: []', 'superseded-by: ["ADR-0002"]'));
   assert.throws(() => p.run('repair', '--apply'), /unexpected inverse/);
@@ -293,7 +293,7 @@ test('repair diagnoses contradictory merged history with a supersession cycle', 
   p.accept(p.draft('ADR', { title: 'Successor', supersedes: ['ADR-0001'] }));
   const modifiedDraft = p.draft('ADR', { supersedes: ['ADR-0002'] });
   const fingerprint = createHash('sha256').update(p.read(modifiedDraft)).digest('hex');
-  const path = 'docs/decisions/adr/ADR-0001.md';
+  const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   p.write(path, p.read(path).replace('supersedes: []', 'supersedes: ["ADR-0002"]')
     .replace(/content-sha256: "[a-f0-9]+"/, `content-sha256: "${fingerprint}"`));
   const statePath = 'docs/decisions/state.json';
@@ -331,7 +331,7 @@ test('configured paths are portable, normalized, and honored for records, drafts
   const saved = p.run('propose', source);
   assert.match(saved.draft, /^proposals\/decisions\//);
   p.accept(source);
-  assert.equal(existsSync(join(p.root, 'decisions/technical/ADR-0001.md')), true);
+  assert.equal(existsSync(join(p.root, 'decisions/technical/ADR-0001-preserve-approved-decisions.md')), true);
   assert.equal(existsSync(join(p.root, 'decisions/registry.json')), true);
   assert.equal(p.run('validate').records, 1);
 });
@@ -370,7 +370,7 @@ test('concurrent writer locks are explicit and never stolen', (t) => {
 test('interrupted transactions block normal work and can be previewed then rolled back', (t) => {
   const p = project(t);
   p.accept(p.draft());
-  const old = 'docs/decisions/adr/ADR-0001.md';
+  const old = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   const created = 'docs/decisions/adr/ADR-0002.md';
   const before = p.read(old);
   p.write(old, 'new content');
@@ -392,7 +392,7 @@ test('interrupted transactions block normal work and can be previewed then rolle
 
 test('recovery refuses divergent edits and unsafe or duplicate journal targets', (t) => {
   const p = project(t);
-  const edited = 'docs/decisions/adr/ADR-0001.md';
+  const edited = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   p.write(edited, 'independent user work');
   const journal = (entries) => p.write('.decision-records.pending.json', JSON.stringify({ version: 1, entries }));
   journal([{ path: edited, before: 'old', after: 'new' }]);
@@ -417,7 +417,7 @@ test('ordinary write failure rolls back records, counters and indexes', (t) => {
   t.mock.method(fs, 'renameSync', (from, to) => {
     if (!injected && to === join(p.root, 'docs/decisions/adr/index.md')) {
       injected = true;
-      assert.equal(existsSync(join(p.root, 'docs/decisions/adr/ADR-0002.md')), true);
+      assert.equal(existsSync(join(p.root, 'docs/decisions/adr/ADR-0002-new-decision.md')), true);
       assert.equal(JSON.parse(p.read('docs/decisions/state.json')).counters.ADR, 2);
       throw new Error('Injected failure after record and state writes');
     }
@@ -433,7 +433,7 @@ test('ordinary write failure rolls back records, counters and indexes', (t) => {
   assert.equal(injected, true);
   assert.equal(p.read('docs/decisions/state.json'), beforeState);
   assert.equal(p.read('docs/decisions/adr/index.md'), beforeIndex);
-  assert.equal(existsSync(join(p.root, 'docs/decisions/adr/ADR-0002.md')), false);
+  assert.equal(existsSync(join(p.root, 'docs/decisions/adr/ADR-0002-new-decision.md')), false);
   assert.equal(existsSync(join(p.root, '.decision-records.pending.json')), false);
   assert.equal(p.run('validate').valid, true);
   assert.equal(p.accept(file).id, 'ADR-0002');
@@ -471,7 +471,7 @@ test('rollback failure preserves a recoverable journal and reports both errors',
 test('record receipts, dates and canonical filenames are validated', (t) => {
   const p = project(t);
   p.accept(p.draft());
-  const path = 'docs/decisions/adr/ADR-0001.md';
+  const path = 'docs/decisions/adr/ADR-0001-preserve-approved-decisions.md';
   const original = p.read(path);
   for (const source of [
     original.replace(/date: "[^"]+"/, 'date: "2026-02-30"'),
@@ -486,7 +486,7 @@ test('record receipts, dates and canonical filenames are validated', (t) => {
   p.write(path, original);
   rmSync(join(p.root, path));
   p.write('docs/decisions/adr/renamed.md', original);
-  assert.throws(() => p.run('repair', '--apply'), /canonical ID filename/);
+  assert.throws(() => p.run('repair', '--apply'), /record filename must be docs\/decisions\/adr\/ADR-0001-preserve-approved-decisions\.md/);
 });
 
 test('CLI success returns JSON previews and validates persisted records end to end', (t) => {
@@ -555,4 +555,19 @@ test('CLI reports errors on stderr with nonzero exit; help and options are expli
   assert.throws(() => p.run('template', 'OTHER'), /ADR or DDR/);
   assert.throws(() => p.run('index', '--apply', '--apply'), /Duplicate option/);
   assert.throws(() => p.run('index', '--unknown'), /Unknown option/);
+});
+
+test('record and draft filenames use the normalized title', (t) => {
+  const p = project(t);
+  const title = 'Usar Ñandú, café & I/O: límites del módulo; con un título muy largo que supera el máximo permitido';
+  const file = p.draft('DDR', { title });
+  assert.match(p.run('propose', file).draft,
+    /^docs\/decisions\/drafts\/usar-nandu-cafe-i-o-limites-del-modulo-con-un-titulo-muy-[a-f0-9]{8}\.md$/);
+  const result = p.accept(file);
+  const path = 'docs/decisions/ddr/DDR-0001-usar-nandu-cafe-i-o-limites-del-modulo-con-un-titulo-muy.md';
+  assert.equal(result.path, path);
+  assert.equal(existsSync(join(p.root, path)), true);
+  assert.match(p.read('docs/decisions/ddr/index.md'),
+    /\[DDR-0001\]\(DDR-0001-usar-nandu-cafe-i-o-limites-del-modulo-con-un-titulo-muy\.md\)/);
+  assert.equal(p.run('validate').valid, true);
 });

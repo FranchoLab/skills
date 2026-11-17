@@ -29,4 +29,4 @@ Propose and maintain architectural (ADR) and domain (DDR) decision records.
 
 ## Version
 
-- 0.1.0
+- 0.2.0

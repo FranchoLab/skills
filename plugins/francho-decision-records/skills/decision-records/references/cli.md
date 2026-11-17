@@ -61,7 +61,8 @@ After authorization to persist, save a completed draft using:
 node .agents/skills/decision-records/scripts/decision-records.mjs propose /tmp/reviewed-draft.md
 ```
 
-This assigns a random provisional filename in the configured drafts directory,
+This assigns a readable provisional filename, the normalized title plus a
+random 8-character suffix, in the configured drafts directory,
 not an official number. It never overwrites an existing draft. Draft editing is
 ordinary file editing; rejected drafts remain unofficial and can be removed
 when the user requests it.
@@ -99,7 +100,11 @@ number or date. JSON output uses `applied: false` for a plan and `applied: true`
 only after successful writes. Errors go to stderr with nonzero exit status.
 
 IDs are `ADR-0001` / `DDR-0001`, with independent monotonic sequences and no
-reuse. Filenames are stable `ID.md`, not title-derived. Official files include
+reuse. Filenames are `ID-normalized-title.md`: the title is lowercased,
+stripped of accents, reduced to `a-z`, `0-9`, and hyphens, and capped at 60
+characters on a word boundary. Titles are immutable, so filenames are stable.
+Records created by 0.1.x as `ID.md` fail validation with the expected name;
+rename them with `git mv`, then run `index --apply` and `validate`. Official files include
 acceptance date, status, content fingerprint and approval reference, followed
 by the approved body. The script generates H1 and frontmatter; the scribe does
 not rewrite the approved prose. Drafts remain available as proposals and are
